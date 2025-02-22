@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/HelixY2J/common/api";
+
+service FireflyService {
+  rpc RegisterNode (RegisterRequest) returns (RegisterResponse);
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc SyncLibrary (SyncLibraryRequest) returns (SyncLibraryResponse);
+  rpc RequestPlayback (PlaybackRequest) returns (PlaybackResponse);
+  rpc SyncPlayback (SyncPlaybackCommand) returns (SyncPlaybackResponse);
+}
+
+
+message RegisterRequest {
+  string node_id = 1;  
+  string node_type = 2; 
+}
+message RegisterResponse {
+  string assigned_id = 1;
+  string master_url = 2;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+}
+message HeartbeatResponse {
+  bool success = 1;
+}
+
+//nodes inform bout their files
+message SyncLibraryRequest {
+  string node_id = 1;
+  repeated FileMetadata files = 2;
+}
+message SyncLibraryResponse {
+  repeated FileMetadata missing_files = 1;
+}
+message FileMetadata {
+  string filename = 1;
+  string checksum = 2;
+  repeated ChunkMetadata chunks = 3;
+}
+message ChunkMetadata {
+  string chunk_id = 1;
+  int64 size_bytes = 2;
+  string checksum = 3;
+}
+
+message PlaybackRequest {
+  string node_id = 1;
+  string filename = 2;
+}
+message PlaybackResponse {
+  bool accepted = 1;
+}
+message SyncPlaybackCommand {
+  string filename = 1;
+  int64 start_time = 2;
+}
+message SyncPlaybackResponse {
+  bool success = 1;
+}
