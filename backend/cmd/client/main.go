@@ -7,11 +7,10 @@ import (
 	"math/rand"
 	"time"
 
-	pb "github.com/HelixY2J/firefly/backend/common/api"
-
 	"github.com/HelixY2J/firefly/backend/pkg/discovery"
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcclient "github.com/HelixY2J/firefly/backend/pkg/grpc_client"
+	"github.com/HelixY2J/firefly/backend/pkg/player"
 )
 
 var (
@@ -86,5 +85,5 @@ func main() {
 
 	log.Printf("SyncLibrary successful, missing files: %v", resp.MissingFiles)
 	log.Println("Client is now listening for playback commands...")
-	client.ListenForPlayback()
+	client.ListenForPlayback(nodeID)
 }

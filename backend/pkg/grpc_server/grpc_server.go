@@ -72,28 +72,10 @@ func (s *GRPCServer) SyncLibrary(ctx context.Context, req *pb.SyncLibraryRequest
 			Chunks:   chunks,
 		}
 	}
+	s.registry.SyncLibrary(req.NodeId, files)
 
-	missingFiles := s.registry.SyncLibrary(req.NodeId, files)
+	return &pb.SyncLibraryResponse{}, nil
 
-	var responseFiles []*pb.FileMetadata
-	for _, file := range missingFiles {
-		var chunks []*pb.ChunkMetadata
-		for _, c := range file.Chunks {
-			chunks = append(chunks, &pb.ChunkMetadata{
-				Fingerprint: c.Fingerprint,
-				Size:        c.Size,
-			})
-		}
-		responseFiles = append(responseFiles, &pb.FileMetadata{
-			Filename: file.Filename,
-			Checksum: file.Checksum,
-			Chunks:   chunks,
-		})
-	}
-
-	return &pb.SyncLibraryResponse{
-		MissingFiles: responseFiles,
-	}, nil
 }
 
 func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackRequest) (*pb.PlaybackResponse, error) {
@@ -103,6 +85,11 @@ func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackReques
 func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
 	log.Printf("Client %s started listening for playback commands", req.NodeId)
 
+
+	availableSongs := s.registry.GetAvailableSongs()
+	if len(availableSongs) == 0 {
+		log.Println(" No songs available for playback.")
+		return nil
 	// smulated playback events
 	playbackCommands := []pb.SyncPlaybackResponse{
 		{Filename: "song1.wav", Status: "PLAY"},
@@ -111,14 +98,19 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 		{Filename: "song2.wav", Status: "PLAY"},
 	}
 
-	for i := range playbackCommands {
-		// Send pointer to the struct instead of copying it
-		if err := stream.Send(&playbackCommands[i]); err != nil {
-			log.Printf(" Failed to send playback command: %v", err)
+	// Pick a song to play
+	for _, song := range availableSongs {
+		cmd := &pb.SyncPlaybackResponse{
+			Filename: song,
+			Status:   "PLAY",
+		}
+		log.Printf(" Sending playback command: %s", song)
+		if err := stream.Send(cmd); err != nil {
+			log.Printf("Failed to send playback command: %v", err)
 			return err
 		}
-		log.Printf(" Sent playback command: %s - %s", playbackCommands[i].Status, playbackCommands[i].Filename)
-		time.Sleep(5 * time.Second) // Simulate delay
+		log.Printf("Sent playback command: %s", song)
+		time.Sleep(5 * time.Second)
 	}
 
 	return nil
