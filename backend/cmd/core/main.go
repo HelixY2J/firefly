@@ -11,6 +11,7 @@ import (
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcserver "github.com/HelixY2J/firefly/backend/pkg/grpc_server"
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
+	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 )
 
 func main() {
@@ -58,6 +59,17 @@ func main() {
 		log.Fatalf("Failed to register service: %v", err)
 	}
 	log.Printf("registered Master in Consul with ID: %s at %s", instanceID, masterAddress)
+
+	relay := websocket.NewWebSocketRelay()
+    
+    // Start WebSocket server for GUI connections
+    go func() {
+        if err := relay.StartServer(":8081"); err != nil {
+            log.Fatalf("Failed to start WebSocket server: %v", err)
+        } else{
+			log.Println("WebSocket server started")
+		}
+    }()
 
 	// Start ealth checks
 	go func() {
