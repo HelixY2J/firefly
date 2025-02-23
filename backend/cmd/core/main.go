@@ -57,7 +57,7 @@ func main() {
     
     // Start WebSocket server for GUI connections
     go func() {
-        if err := relay.StartServer(":8080"); err != nil {
+        if err := relay.StartServer(":8081"); err != nil {
             log.Fatalf("Failed to start WebSocket server: %v", err)
         } else{
 			log.Println("WebSocket server started")
