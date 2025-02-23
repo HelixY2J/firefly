@@ -11,7 +11,7 @@ service FireflyService {
   rpc RequestPlayback (PlaybackRequest) returns (PlaybackResponse);
   rpc SyncPlayback (SyncPlaybackCommand) returns (SyncPlaybackResponse);
 }
-
+// new rpc - announce new client
 
 message RegisterRequest {
   string node_id = 1;  
@@ -19,7 +19,7 @@ message RegisterRequest {
 }
 message RegisterResponse {
   string assigned_id = 1;
-  string master_url = 2;
+  string master_url = 2; // revise this
 }
 
 message HeartbeatRequest {
@@ -43,9 +43,11 @@ message FileMetadata {
   repeated ChunkMetadata chunks = 3;
 }
 message ChunkMetadata {
-  string chunk_id = 1;
-  int64 size_bytes = 2;
-  string checksum = 3;
+  // string chunk_id = 1;
+  // int64 size_bytes = 2;
+  // string checksum = 3;
+  string fingerprint = 1;
+  int64 size = 2;
 }
 
 message PlaybackRequest {

@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	pb "github.com/HelixY2J/firefly/backend/common/api"
+
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcclient "github.com/HelixY2J/firefly/backend/pkg/grpc_client"
 )
@@ -36,5 +38,22 @@ func main() {
 	client := grpcclient.NewClient(masterAddr[0])
 	defer client.Close()
 
-	client.RegisterNode()
+	nodeID := client.RegisterNode()
+
+	files := []*pb.FileMetadata{
+		{
+			Filename: "test_song.mp3",
+			Checksum: "abc123",
+			Chunks: []*pb.ChunkMetadata{
+				{Fingerprint: "chunk1_hash", Size: 1024},
+			},
+		},
+	}
+
+	resp, err := client.SyncLibrary(nodeID, files)
+	if err != nil {
+		log.Fatalf(" SyncLibrary failed: %v", err)
+	}
+
+	log.Printf("SyncLibrary successful, missing files: %v", resp.MissingFiles)
 }

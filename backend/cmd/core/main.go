@@ -17,6 +17,31 @@ func main() {
 	reg := registry.NewInMemoryRegistry("localhost:50051")
 	registryService := registry.NewRegistryService(reg)
 
+	registryService.LibraryStore.SyncFiles("master-node", []registry.FileMetadata{
+		{
+			Filename: "server_song.mp3",
+			Checksum: "server123",
+			Chunks: []registry.ChunkMetadata{
+				{Fingerprint: "server_chunk1", Size: 2048},
+			},
+		},
+		{
+			Filename: "test_song.mp3",
+			Checksum: "abc123",
+			Chunks: []registry.ChunkMetadata{
+				{Fingerprint: "chunk1_hash", Size: 1024},
+			},
+		},
+		{
+			Filename: "background_music.mp3",
+			Checksum: "server456",
+			Chunks: []registry.ChunkMetadata{
+				{Fingerprint: "server_chunk2", Size: 3072},
+			},
+		},
+	})
+	log.Println("loaded server files into the library")
+
 	consulClient, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		log.Fatalf(" Failed to connect to Consul: %v", err)
