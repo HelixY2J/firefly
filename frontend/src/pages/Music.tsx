@@ -21,7 +21,7 @@ const MusicPage = () => {
 
   useEffect(() => {
     // Create WebSocket connection
-    const ws = new WebSocket('ws://your-websocket-url/music');
+    const ws = new WebSocket('ws://localhost:8081/ws');
 
     ws.onopen = () => {
       setWsConnected(true);

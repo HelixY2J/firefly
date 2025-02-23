@@ -20,7 +20,7 @@ const Nodes = () => {
 
   useEffect(() => {
     // Create WebSocket connection
-    const ws = new WebSocket('ws://your-websocket-url/nodes');
+    const ws = new WebSocket('ws://localhost:8081/ws');
 
     ws.onopen = () => {
       setWsConnected(true);
@@ -30,6 +30,7 @@ const Nodes = () => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setNodes(data.nodes);
+      console.log('Received nodes data:', data);
     };
 
     ws.onclose = () => {
