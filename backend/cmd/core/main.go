@@ -286,7 +286,7 @@ func main() {
 		}
 	}()
 
-	server := grpcserver.NewGRPCServer(registryService)
+	server := grpcserver.NewGRPCServer(reg, relay)
 	if err := server.Start(serverAddress); err != nil {
 		log.Fatalf(" Failed to start gRPC server: %v", err)
 	}
