@@ -29,13 +29,13 @@ func NewGRPCServer(reg registry.Registry) *GRPCServer {
 	return s
 }
 
-func (s *GRPCServer) Start(port int) error {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func (s *GRPCServer) Start(address string) error {
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	log.Printf("gRPC server started on port %d", port)
+	log.Printf("gRPC server started on %s", address)
 	return s.server.Serve(listener)
 }
 
