@@ -9,11 +9,10 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/HelixY2J/firefly/backend/common/api"
-
 	"github.com/HelixY2J/firefly/backend/pkg/discovery"
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcclient "github.com/HelixY2J/firefly/backend/pkg/grpc_client"
+	"github.com/HelixY2J/firefly/backend/pkg/player"
 )
 
 var (
@@ -94,7 +93,7 @@ func main() {
 
 	files := []*pb.FileMetadata{
 		{
-			Filename: "test_song.mp3",
+			Filename: "test_song.wav",
 			Checksum: "abc123",
 			Chunks: []*pb.ChunkMetadata{
 				{Fingerprint: "chunk1_hash", Size: 1024},
@@ -109,5 +108,5 @@ func main() {
 
 	log.Printf("SyncLibrary successful, missing files: %v", resp.MissingFiles)
 	log.Println("Client is now listening for playback commands...")
-	client.ListenForPlayback()
+	client.ListenForPlayback(nodeID)
 }

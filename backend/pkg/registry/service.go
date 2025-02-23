@@ -34,6 +34,10 @@ func (s *RegistryService) CleanupInactiveNodes() {
 	s.Registry.CleanupInactiveNodes()
 }
 
-func (s *RegistryService) SyncLibrary(nodeID string, files []FileMetadata) []FileMetadata {
-	return s.LibraryStore.SyncFiles(nodeID, files)
+func (s *RegistryService) SyncLibrary(nodeID string, files []FileMetadata) {
+	s.LibraryStore.SyncFiles(nodeID, files)
+}
+
+func (s *RegistryService) GetAvailableSongs() []string {
+	return s.LibraryStore.GetAvailableSongs()
 }

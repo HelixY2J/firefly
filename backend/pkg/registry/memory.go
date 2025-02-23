@@ -11,15 +11,19 @@ import (
 )
 
 type InMemoryRegistry struct {
-	mu        sync.RWMutex
-	nodes     map[string]*NodeInfo
-	masterURL string
+	mu            sync.RWMutex
+	nodes         map[string]*NodeInfo
+	masterURL     string
+	libraryStore  *LibraryStore
+	playingStatus map[string]bool
 }
 
 func NewInMemoryRegistry(masterURL string) *InMemoryRegistry {
 	return &InMemoryRegistry{
-		nodes:     make(map[string]*NodeInfo),
-		masterURL: masterURL,
+		nodes:         make(map[string]*NodeInfo),
+		masterURL:     masterURL,
+		libraryStore:  NewLibraryStore(),
+		playingStatus: make(map[string]bool),
 	}
 }
 
@@ -77,6 +81,40 @@ func (r *InMemoryRegistry) CleanupInactiveNodes() {
 	}
 }
 
-func (r *InMemoryRegistry) SyncLibrary(nodeID string, files []FileMetadata) []FileMetadata {
-	return nil
+func (r *InMemoryRegistry) SyncLibrary(nodeID string, files []FileMetadata) {
+	r.libraryStore.SyncFiles(nodeID, files)
+}
+
+func (r *InMemoryRegistry) GetAvailableSongs() []string {
+	return r.libraryStore.GetAvailableSongs()
+}
+
+func (r *InMemoryRegistry) SetPlayingStatus(nodeID string, isPlaying bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.playingStatus[nodeID] = isPlaying
+}
+
+func (r *InMemoryRegistry) IsPlaying(nodeID string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.playingStatus[nodeID]
+}
+
+func (r *InMemoryRegistry) CanSendPlaybackCommand(nodeID string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return !r.playingStatus[nodeID]
+}
+
+func (r *InMemoryRegistry) SyncPlayback(nodeID string) bool {
+	if r.CanSendPlaybackCommand(nodeID) {
+		r.SetPlayingStatus(nodeID, true)
+		return true
+	}
+	return false
+}
+
+func (r *InMemoryRegistry) FinishPlayback(nodeID string) {
+	r.SetPlayingStatus(nodeID, false)
 }

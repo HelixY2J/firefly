@@ -18,6 +18,7 @@ import (
 	"github.com/HelixY2J/firefly/backend/pkg/discovery"
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcserver "github.com/HelixY2J/firefly/backend/pkg/grpc_server"
+	"github.com/HelixY2J/firefly/backend/pkg/player"
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
 	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 )
@@ -76,7 +77,7 @@ func getMP3Files(registryService *registry.RegistryService) []string {
     log.Printf("Debug: Found %d total files in LibraryStore", len(files))
     
     for _, file := range files {
-        if strings.HasSuffix(file.Filename, ".mp3") {
+        if strings.HasSuffix(file.Filename, ".wav") {
             mp3Files = append(mp3Files, file.Filename)
         }
     }
@@ -94,7 +95,7 @@ func loadMusicFiles(dirPath string) ([]registry.FileMetadata, error) {
     }
 
     for _, entry := range entries {
-        if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".mp3") {
+        if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".wav") {
             continue
         }
 
