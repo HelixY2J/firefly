@@ -95,7 +95,7 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 			continue
 		}
 
-		if command != "PLAY" && command != "PAUSE" {
+		if command != "PLAY" && command != "STOP" {
 			log.Printf("Invalid playback command received: %s", command)
 			continue
 		}
