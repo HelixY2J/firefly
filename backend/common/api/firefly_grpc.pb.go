@@ -34,7 +34,7 @@ type FireflyServiceClient interface {
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 	SyncLibrary(ctx context.Context, in *SyncLibraryRequest, opts ...grpc.CallOption) (*SyncLibraryResponse, error)
 	RequestPlayback(ctx context.Context, in *PlaybackRequest, opts ...grpc.CallOption) (*PlaybackResponse, error)
-	SyncPlayback(ctx context.Context, in *SyncPlaybackCommand, opts ...grpc.CallOption) (*SyncPlaybackResponse, error)
+	SyncPlayback(ctx context.Context, in *SyncPlaybackCommand, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SyncPlaybackResponse], error)
 }
 
 type fireflyServiceClient struct {
@@ -85,15 +85,24 @@ func (c *fireflyServiceClient) RequestPlayback(ctx context.Context, in *Playback
 	return out, nil
 }
 
-func (c *fireflyServiceClient) SyncPlayback(ctx context.Context, in *SyncPlaybackCommand, opts ...grpc.CallOption) (*SyncPlaybackResponse, error) {
+func (c *fireflyServiceClient) SyncPlayback(ctx context.Context, in *SyncPlaybackCommand, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SyncPlaybackResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SyncPlaybackResponse)
-	err := c.cc.Invoke(ctx, FireflyService_SyncPlayback_FullMethodName, in, out, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &FireflyService_ServiceDesc.Streams[0], FireflyService_SyncPlayback_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &grpc.GenericClientStream[SyncPlaybackCommand, SyncPlaybackResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FireflyService_SyncPlaybackClient = grpc.ServerStreamingClient[SyncPlaybackResponse]
 
 // FireflyServiceServer is the server API for FireflyService service.
 // All implementations must embed UnimplementedFireflyServiceServer
@@ -103,7 +112,7 @@ type FireflyServiceServer interface {
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	SyncLibrary(context.Context, *SyncLibraryRequest) (*SyncLibraryResponse, error)
 	RequestPlayback(context.Context, *PlaybackRequest) (*PlaybackResponse, error)
-	SyncPlayback(context.Context, *SyncPlaybackCommand) (*SyncPlaybackResponse, error)
+	SyncPlayback(*SyncPlaybackCommand, grpc.ServerStreamingServer[SyncPlaybackResponse]) error
 	mustEmbedUnimplementedFireflyServiceServer()
 }
 
@@ -126,8 +135,8 @@ func (UnimplementedFireflyServiceServer) SyncLibrary(context.Context, *SyncLibra
 func (UnimplementedFireflyServiceServer) RequestPlayback(context.Context, *PlaybackRequest) (*PlaybackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestPlayback not implemented")
 }
-func (UnimplementedFireflyServiceServer) SyncPlayback(context.Context, *SyncPlaybackCommand) (*SyncPlaybackResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SyncPlayback not implemented")
+func (UnimplementedFireflyServiceServer) SyncPlayback(*SyncPlaybackCommand, grpc.ServerStreamingServer[SyncPlaybackResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method SyncPlayback not implemented")
 }
 func (UnimplementedFireflyServiceServer) mustEmbedUnimplementedFireflyServiceServer() {}
 func (UnimplementedFireflyServiceServer) testEmbeddedByValue()                        {}
@@ -222,23 +231,16 @@ func _FireflyService_RequestPlayback_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FireflyService_SyncPlayback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SyncPlaybackCommand)
-	if err := dec(in); err != nil {
-		return nil, err
+func _FireflyService_SyncPlayback_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SyncPlaybackCommand)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(FireflyServiceServer).SyncPlayback(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: FireflyService_SyncPlayback_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FireflyServiceServer).SyncPlayback(ctx, req.(*SyncPlaybackCommand))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(FireflyServiceServer).SyncPlayback(m, &grpc.GenericServerStream[SyncPlaybackCommand, SyncPlaybackResponse]{ServerStream: stream})
 }
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type FireflyService_SyncPlaybackServer = grpc.ServerStreamingServer[SyncPlaybackResponse]
 
 // FireflyService_ServiceDesc is the grpc.ServiceDesc for FireflyService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -263,11 +265,13 @@ var FireflyService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "RequestPlayback",
 			Handler:    _FireflyService_RequestPlayback_Handler,
 		},
+	},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "SyncPlayback",
-			Handler:    _FireflyService_SyncPlayback_Handler,
+			StreamName:    "SyncPlayback",
+			Handler:       _FireflyService_SyncPlayback_Handler,
+			ServerStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/firefly.proto",
 }

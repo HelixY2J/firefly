@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 type Registry interface {
@@ -13,6 +14,7 @@ type Registry interface {
 	HealthCheck(instanceID, serviceName string) error
 }
 
-func GenerateInstanceID(serviceName string) string {
-	return fmt.Sprintf("%s-%d", serviceName, rand.Intn(100000))
+func GenerateInstanceID(serviceName string, port int) string {
+	rand.Seed(time.Now().UnixNano())
+	return fmt.Sprintf("%s-%d-%d", serviceName, port, rand.Intn(100000))
 }
