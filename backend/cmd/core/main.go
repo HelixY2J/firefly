@@ -10,6 +10,7 @@ import (
 	"github.com/HelixY2J/firefly/backend/pkg/discovery"
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcserver "github.com/HelixY2J/firefly/backend/pkg/grpc_server"
+	"github.com/HelixY2J/firefly/backend/pkg/player"
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
 	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 )
@@ -21,29 +22,17 @@ func main() {
 	reg := registry.NewInMemoryRegistry(masterAddress)
 	registryService := registry.NewRegistryService(reg)
 
-	registryService.LibraryStore.SyncFiles("master-node", []registry.FileMetadata{
-		{
-			Filename: "server_song.mp3",
-			Checksum: "server123",
-			Chunks: []registry.ChunkMetadata{
-				{Fingerprint: "server_chunk1", Size: 2048},
-			},
-		},
-		{
-			Filename: "test_song.mp3",
-			Checksum: "abc123",
-			Chunks: []registry.ChunkMetadata{
-				{Fingerprint: "chunk1_hash", Size: 1024},
-			},
-		},
-		{
-			Filename: "background_music.mp3",
-			Checksum: "server456",
-			Chunks: []registry.ChunkMetadata{
-				{Fingerprint: "server_chunk2", Size: 3072},
-			},
-		},
-	})
+	masterFiles := player.GetMasterSongs()
+	var songFiles []registry.FileMetadata
+	for _, file := range masterFiles {
+		songFiles = append(songFiles, registry.FileMetadata{
+			Filename: file.Filename,
+			Checksum: file.Checksum,
+		})
+	}
+
+	registryService.LibraryStore.SyncFiles("master-node", songFiles)
+
 	log.Println("loaded server files into the library")
 
 	consulClient, err := consul.NewRegistry("localhost:8500")
