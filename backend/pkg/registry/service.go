@@ -41,3 +41,7 @@ func (s *RegistryService) SyncLibrary(nodeID string, files []FileMetadata) {
 func (s *RegistryService) GetAvailableSongs() []string {
 	return s.LibraryStore.GetAvailableSongs()
 }
+
+func (s *RegistryService) SyncPlayback(nodeID string, action string) bool {
+	return s.Registry.SyncPlayback(nodeID, action)
+}

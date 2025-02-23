@@ -65,3 +65,12 @@ message SyncPlaybackResponse {
   string filename = 1;
   string status = 2;
 }
+
+// message SyncPlaybackCommand {
+//   string node_id = 1;
+//   string action = 2;  
+// }
+
+// message SyncPlaybackResponse {
+//   string status = 1;  
+// }

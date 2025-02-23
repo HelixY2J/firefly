@@ -10,6 +10,7 @@ import (
 	pb "github.com/HelixY2J/firefly/backend/common/api"
 
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
+	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 	"google.golang.org/grpc"
 )
 
@@ -17,13 +18,15 @@ type GRPCServer struct {
 	pb.UnimplementedFireflyServiceServer
 	server   *grpc.Server
 	registry registry.Registry
+	relay    *websocket.WebSocketRelay
 }
 
-func NewGRPCServer(reg registry.Registry) *GRPCServer {
+func NewGRPCServer(reg registry.Registry, relay *websocket.WebSocketRelay) *GRPCServer {
 	grpcServer := grpc.NewServer()
 	s := &GRPCServer{
 		server:   grpcServer,
 		registry: reg,
+		relay:    relay,
 	}
 	pb.RegisterFireflyServiceServer(grpcServer, s)
 	return s
@@ -85,34 +88,58 @@ func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackReques
 func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
 	log.Printf("Client %s started listening for playback commands", req.NodeId)
 
-
-	availableSongs := s.registry.GetAvailableSongs()
-	if len(availableSongs) == 0 {
-		log.Println(" No songs available for playback.")
-		return nil
-	}
-	// smulated playback events
-	/*playbackCommands := []pb.SyncPlaybackResponse{
-		{Filename: "song1.wav", Status: "PLAY"},
-		{Filename: "song1.wav", Status: "PAUSE"},
-		{Filename: "song1.wav", Status: "STOP"},
-		{Filename: "song2.wav", Status: "PLAY"},
-	}*/
-
-	// Pick a song to play
-	for _, song := range availableSongs {
-		cmd := &pb.SyncPlaybackResponse{
-			Filename: song,
-			Status:   "PLAY",
+	for {
+		command := s.relay.GetLastCommand()
+		if command == "" {
+			time.Sleep(1 * time.Second)
+			continue
 		}
-		log.Printf(" Sending playback command: %s", song)
-		if err := stream.Send(cmd); err != nil {
-			log.Printf("Failed to send playback command: %v", err)
-			return err
-		}
-		log.Printf("Sent playback command: %s", song)
-		time.Sleep(5 * time.Second)
-	}
 
-	return nil
+		if command != "PLAY" && command != "PAUSE" {
+			log.Printf("Invalid playback command received: %s", command)
+			continue
+		}
+
+		if s.registry.SyncPlayback(req.NodeId, command) {
+			cmd := &pb.SyncPlaybackResponse{
+				Filename: "",
+				Status:   command,
+			}
+			log.Printf("Sending playback command: %s", command)
+
+			if err := stream.Send(cmd); err != nil {
+				log.Printf("Failed to send playback command: %v", err)
+				return err
+			}
+		}
+
+		time.Sleep(1 * time.Second)
+	}
 }
+
+// func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
+// 	log.Printf("Client %s started listening for playback commands", req.NodeId)
+
+// 	availableSongs := s.registry.GetAvailableSongs()
+// 	if len(availableSongs) == 0 {
+// 		log.Println(" No songs available for playback.")
+// 		return nil
+// 	}
+
+// 	// Pick a song to play
+// 	for _, song := range availableSongs {
+// 		cmd := &pb.SyncPlaybackResponse{
+// 			Filename: song,
+// 			Status:   "PLAY",
+// 		}
+// 		log.Printf(" Sending playback command: %s", song)
+// 		if err := stream.Send(cmd); err != nil {
+// 			log.Printf("Failed to send playback command: %v", err)
+// 			return err
+// 		}
+// 		log.Printf("Sent playback command: %s", song)
+// 		time.Sleep(5 * time.Second)
+// 	}
+
+// 	return nil
+// }
