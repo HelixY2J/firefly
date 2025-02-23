@@ -41,11 +41,11 @@ const MusicPage = () => {
       switch (data.type) {
         case "master_stats":
           console.log("Memory Stats:", data.memory);
-          console.log("MP3 Files:", data.mp3_files);
+          console.log("MP3 Files:", data.wav_files);
           // Update songs list with received MP3 files
           const newSongs = data.mp3_files.map((filename: string, index: number) => ({
             id: index + 1,
-            title: filename.replace('.mp3', ''),
+            title: filename.replace('.wav', ''),
             artist: 'Unknown', // You can modify this as needed
             duration: "0:00"   // You can modify this as needed
           }));

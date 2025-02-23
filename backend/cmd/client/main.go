@@ -71,7 +71,7 @@ func main() {
 
 	files := []*pb.FileMetadata{
 		{
-			Filename: "test_song.mp3",
+			Filename: "test_song.wav",
 			Checksum: "abc123",
 			Chunks: []*pb.ChunkMetadata{
 				{Fingerprint: "chunk1_hash", Size: 1024},

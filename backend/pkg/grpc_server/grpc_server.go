@@ -105,10 +105,10 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 
 	// smulated playback events
 	playbackCommands := []pb.SyncPlaybackResponse{
-		{Filename: "song1.mp3", Status: "PLAY"},
-		{Filename: "song1.mp3", Status: "PAUSE"},
-		{Filename: "song1.mp3", Status: "STOP"},
-		{Filename: "song2.mp3", Status: "PLAY"},
+		{Filename: "song1.wav", Status: "PLAY"},
+		{Filename: "song1.wav", Status: "PAUSE"},
+		{Filename: "song1.wav", Status: "STOP"},
+		{Filename: "song2.wav", Status: "PLAY"},
 	}
 
 	for i := range playbackCommands {
