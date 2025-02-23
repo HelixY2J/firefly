@@ -22,6 +22,17 @@ type ChunkMetadata struct {
 	Size        int64
 }
 
+func (ls *LibraryStore) GetAllFiles() []FileMetadata {
+    ls.mu.Lock()
+    defer ls.mu.Unlock()
+    
+    files := make([]FileMetadata, 0, len(ls.files))
+    for _, file := range ls.files {
+        files = append(files, file)
+    }
+    return files
+}
+
 func NewLibraryStore() *LibraryStore {
 	return &LibraryStore{
 		files: make(map[string][]string),

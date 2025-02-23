@@ -68,17 +68,15 @@ func main() {
 
 	nodeID := client.RegisterNode()
 
-	// files := []*pb.FileMetadata{
-	// 	{
-	// 		Filename: "test_song.mp3",
-	// 		Checksum: "abc123",
-	// 		Chunks: []*pb.ChunkMetadata{
-	// 			{Fingerprint: "chunk1_hash", Size: 1024},
-	// 		},
-	// 	},
-	// }
-
-	files := player.GetAvailableSongs()
+	files := []*pb.FileMetadata{
+		{
+			Filename: "test_song.wav",
+			Checksum: "abc123",
+			Chunks: []*pb.ChunkMetadata{
+				{Fingerprint: "chunk1_hash", Size: 1024},
+			},
+		},
+	}
 
 	resp, err := client.SyncLibrary(nodeID, files)
 	if err != nil {

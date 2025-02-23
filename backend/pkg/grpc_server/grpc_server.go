@@ -85,10 +85,17 @@ func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackReques
 func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
 	log.Printf("Client %s started listening for playback commands", req.NodeId)
 
+
 	availableSongs := s.registry.GetAvailableSongs()
 	if len(availableSongs) == 0 {
 		log.Println(" No songs available for playback.")
 		return nil
+	// smulated playback events
+	playbackCommands := []pb.SyncPlaybackResponse{
+		{Filename: "song1.wav", Status: "PLAY"},
+		{Filename: "song1.wav", Status: "PAUSE"},
+		{Filename: "song1.wav", Status: "STOP"},
+		{Filename: "song2.wav", Status: "PLAY"},
 	}
 
 	// Pick a song to play

@@ -67,6 +67,17 @@ func (wr *WebSocketRelay) SetMasterConnection(conn *websocket.Conn) {
     go wr.forwardMessages(conn, "Master")
 }
 
+func (wr *WebSocketRelay) Broadcast(message []byte) {
+    wr.mu.Lock()
+    defer wr.mu.Unlock()
+
+    if wr.guiConn != nil {
+        if err := wr.guiConn.WriteMessage(websocket.TextMessage, message); err != nil {
+            log.Printf("Error broadcasting to GUI: %v", err)
+        }
+    }
+}
+
 // forwardMessages handles message forwarding between connections
 func (wr *WebSocketRelay) forwardMessages(source *websocket.Conn, sourceType string) {
     defer source.Close()

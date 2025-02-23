@@ -20,8 +20,14 @@ const MusicPage = () => {
   const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
-    // Create WebSocket connection
-    const ws = new WebSocket('ws://your-websocket-url/music');
+        // Use window.location.hostname to get the current IP address
+        const wsHost = window.location.hostname;
+        const ws = new WebSocket(`ws://${wsHost}:8081/ws`);
+        
+        ws.onopen = () => {
+            setWsConnected(true);
+            console.log('Connected to music WebSocket');
+        };
 
     ws.onopen = () => {
       setWsConnected(true);
@@ -30,7 +36,29 @@ const MusicPage = () => {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setSongs(data.songs);
+      
+      // Handle different message types
+      switch (data.type) {
+        case "master_stats":
+          console.log("Memory Stats:", data.memory);
+          console.log("MP3 Files:", data.wav_files);
+          // Update songs list with received MP3 files
+          const newSongs = data.mp3_files.map((filename: string, index: number) => ({
+            id: index + 1,
+            title: filename.replace('.wav', ''),
+            artist: 'Unknown', // You can modify this as needed
+            duration: "0:00"   // You can modify this as needed
+          }));
+          setSongs(newSongs);
+          break;
+          
+        default:
+          // Handle other message types if needed
+          if (data.songs) {
+            setSongs(data.songs);
+          }
+          break;
+      }
     };
 
     ws.onclose = () => {
