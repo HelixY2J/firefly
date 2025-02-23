@@ -18,7 +18,7 @@ import (
 	"github.com/HelixY2J/firefly/backend/pkg/discovery"
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcserver "github.com/HelixY2J/firefly/backend/pkg/grpc_server"
-	"github.com/HelixY2J/firefly/backend/pkg/player"
+	//"github.com/HelixY2J/firefly/backend/pkg/player"
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
 	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 )

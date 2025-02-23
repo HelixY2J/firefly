@@ -9,10 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/HelixY2J/firefly/backend/pkg/discovery"
-	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
-	grpcclient "github.com/HelixY2J/firefly/backend/pkg/grpc_client"
-	"github.com/HelixY2J/firefly/backend/pkg/player"
+	pb "github.com/HelixY2J/firefly/backend/common/api"
+    "github.com/HelixY2J/firefly/backend/pkg/discovery"
+    "github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
+    grpcclient "github.com/HelixY2J/firefly/backend/pkg/grpc_client"
 )
 
 var (

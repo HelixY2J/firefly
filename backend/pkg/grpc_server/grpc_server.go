@@ -90,13 +90,14 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 	if len(availableSongs) == 0 {
 		log.Println(" No songs available for playback.")
 		return nil
+	}
 	// smulated playback events
-	playbackCommands := []pb.SyncPlaybackResponse{
+	/*playbackCommands := []pb.SyncPlaybackResponse{
 		{Filename: "song1.wav", Status: "PLAY"},
 		{Filename: "song1.wav", Status: "PAUSE"},
 		{Filename: "song1.wav", Status: "STOP"},
 		{Filename: "song2.wav", Status: "PLAY"},
-	}
+	}*/
 
 	// Pick a song to play
 	for _, song := range availableSongs {

@@ -7,6 +7,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"os"
+	"time"
 
 	"github.com/hashicorp/consul/api"
 )
