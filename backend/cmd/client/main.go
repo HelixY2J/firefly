@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
+	"os"
 	"time"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
@@ -18,14 +20,35 @@ var (
 	service = "firefly-client"
 )
 
-func main() {
-	consulClient, err := consul.NewRegistry("localhost:8500")
+// getOutboundIP gets the preferred outbound IP of this machine
+func getOutboundIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatalf(" Failed to connect to Consul: %v", err)
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
+}
+
+func main() {
+	// Get Consul address from environment or use default
+	consulAddr := os.Getenv("CONSUL_ADDR")
+	if consulAddr == "" {
+		consulAddr = "localhost:8500"
+	}
+
+	consulClient, err := consul.NewRegistry(consulAddr)
+	if err != nil {
+		log.Fatalf("Failed to connect to Consul: %v", err)
 	}
 	rand.Seed(time.Now().UnixNano())
 	clientPort := 50052 + rand.Intn(8)
-	clientAddress := fmt.Sprintf("localhost:%d", clientPort)
+	
+	// Use actual IP address instead of localhost
+	hostIP := getOutboundIP()
+	clientAddress := fmt.Sprintf("%s:%d", hostIP, clientPort)
 	instanceID := discovery.GenerateInstanceID(service, clientPort)
 
 	err = consulClient.Register(context.Background(), instanceID, service, clientAddress)
