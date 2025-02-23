@@ -20,8 +20,14 @@ const MusicPage = () => {
   const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
-    // Create WebSocket connection
-    const ws = new WebSocket('ws://localhost:8081/ws');
+        // Use window.location.hostname to get the current IP address
+        const wsHost = window.location.hostname;
+        const ws = new WebSocket(`ws://${wsHost}:8081/ws`);
+        
+        ws.onopen = () => {
+            setWsConnected(true);
+            console.log('Connected to music WebSocket');
+        };
 
     ws.onopen = () => {
       setWsConnected(true);
