@@ -4,9 +4,26 @@ import (
     "log"
     "net/http"
     "sync"
+    "encoding/json"
 
     "github.com/gorilla/websocket"
 )
+
+type PlaybackCommand struct {
+    Type     string `json:"type"`
+    Filename string `json:"filename"`
+    Status   string `json:"status"`
+}
+
+// Add this callback type
+type PlaybackHandler func(filename string, status string)
+
+// Add this method to set the playback handler
+func (wr *WebSocketRelay) SetPlaybackHandler(handler PlaybackHandler) {
+    wr.mu.Lock()
+    defer wr.mu.Unlock()
+    wr.onPlayback = handler
+}
 
 // WebSocketRelay handles message forwarding between master and GUI
 type WebSocketRelay struct {
@@ -14,6 +31,7 @@ type WebSocketRelay struct {
     guiConn    *websocket.Conn
     mu         sync.Mutex
     upgrader   websocket.Upgrader
+    onPlayback PlaybackHandler
 }
 
 // NewWebSocketRelay creates a new relay instance
@@ -26,6 +44,7 @@ func NewWebSocketRelay() *WebSocketRelay {
         },
     }
 }
+
 
 // StartServer starts the WebSocket server for GUI connections
 func (wr *WebSocketRelay) StartServer(addr string) error {
@@ -79,16 +98,32 @@ func (wr *WebSocketRelay) Broadcast(message []byte) {
 }
 
 // forwardMessages handles message forwarding between connections
+// Modify the forwardMessages function to handle playback commands
 func (wr *WebSocketRelay) forwardMessages(source *websocket.Conn, sourceType string) {
     defer source.Close()
 
     for {
-        messageType, message, err := source.ReadMessage()
+        _, message, err := source.ReadMessage()
         if err != nil {
             log.Printf("%s connection closed: %v", sourceType, err)
             return
         }
 
+        // Try to parse the message as a playback command
+        var cmd PlaybackCommand
+        if err := json.Unmarshal(message, &cmd); err == nil {
+            if cmd.Type == "playback_command" {
+                wr.mu.Lock()
+                if wr.onPlayback != nil {
+                    wr.onPlayback(cmd.Filename, cmd.Status)
+                }
+                wr.mu.Unlock()
+                log.Printf("Received playback command: %s - %s", cmd.Filename, cmd.Status)
+                continue
+            }
+        }
+
+        // Handle other message types as before
         wr.mu.Lock()
         var dest *websocket.Conn
         if sourceType == "GUI" {
@@ -98,13 +133,13 @@ func (wr *WebSocketRelay) forwardMessages(source *websocket.Conn, sourceType str
         }
 
         if dest != nil {
-            if err := dest.WriteMessage(messageType, message); err != nil {
-				destType := "Master"
-				if sourceType == "GUI" {
-					destType = "GUI"
-				}
-				log.Printf("Error forwarding message to %s: %v", destType, err)
-			}
+            if err := dest.WriteMessage(websocket.TextMessage, message); err != nil {
+                destType := "Master"
+                if sourceType == "GUI" {
+                    destType = "GUI"
+                }
+                log.Printf("Error forwarding message to %s: %v", destType, err)
+            }
         }
         wr.mu.Unlock()
     }
