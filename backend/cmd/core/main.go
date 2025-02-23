@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/HelixY2J/firefly/backend/pkg/discovery"
@@ -13,8 +15,10 @@ import (
 )
 
 func main() {
+	masterPort := 50051
+	masterAddress := fmt.Sprintf("localhost:%d", masterPort)
 	// Initialize Consul client
-	reg := registry.NewInMemoryRegistry("localhost:50051")
+	reg := registry.NewInMemoryRegistry(masterAddress)
 	registryService := registry.NewRegistryService(reg)
 
 	registryService.LibraryStore.SyncFiles("master-node", []registry.FileMetadata{
@@ -46,12 +50,15 @@ func main() {
 	if err != nil {
 		log.Fatalf(" Failed to connect to Consul: %v", err)
 	}
-	instanceID := discovery.GenerateInstanceID("firefly-master")
 
-	err = consulClient.Register(context.Background(), instanceID, "firefly-master", "localhost:50051")
+	rand.Seed(time.Now().UnixNano())
+	instanceID := discovery.GenerateInstanceID("firefly-master", masterPort)
+
+	err = consulClient.Register(context.Background(), instanceID, "firefly-master", masterAddress)
 	if err != nil {
 		log.Fatalf("Failed to register service: %v", err)
 	}
+	log.Printf("registered Master in Consul with ID: %s at %s", instanceID, masterAddress)
 
 	relay := websocket.NewWebSocketRelay()
     
@@ -74,6 +81,18 @@ func main() {
 				log.Println("Health check sent")
 			}
 			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	go func() {
+		for {
+			clients, err := consulClient.Discover(context.Background(), "firefly-client")
+			if err != nil {
+				log.Printf(" Failed to discover clients: %v", err)
+			} else {
+				log.Printf(" Active Clients: %v", clients)
+			}
+			time.Sleep(10 * time.Second)
 		}
 	}()
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
 
@@ -99,6 +100,26 @@ func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackReques
 	return &pb.PlaybackResponse{}, nil
 }
 
-func (s *GRPCServer) SyncPlayback(ctx context.Context, req *pb.SyncPlaybackCommand) (*pb.SyncPlaybackResponse, error) {
-	return &pb.SyncPlaybackResponse{}, nil
+func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
+	log.Printf("Client %s started listening for playback commands", req.NodeId)
+
+	// smulated playback events
+	playbackCommands := []pb.SyncPlaybackResponse{
+		{Filename: "song1.mp3", Status: "PLAY"},
+		{Filename: "song1.mp3", Status: "PAUSE"},
+		{Filename: "song1.mp3", Status: "STOP"},
+		{Filename: "song2.mp3", Status: "PLAY"},
+	}
+
+	for i := range playbackCommands {
+		// Send pointer to the struct instead of copying it
+		if err := stream.Send(&playbackCommands[i]); err != nil {
+			log.Printf(" Failed to send playback command: %v", err)
+			return err
+		}
+		log.Printf(" Sent playback command: %s - %s", playbackCommands[i].Status, playbackCommands[i].Filename)
+		time.Sleep(5 * time.Second) // Simulate delay
+	}
+
+	return nil
 }

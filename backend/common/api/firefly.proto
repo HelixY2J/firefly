@@ -9,7 +9,7 @@ service FireflyService {
   rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
   rpc SyncLibrary (SyncLibraryRequest) returns (SyncLibraryResponse);
   rpc RequestPlayback (PlaybackRequest) returns (PlaybackResponse);
-  rpc SyncPlayback (SyncPlaybackCommand) returns (SyncPlaybackResponse);
+  rpc SyncPlayback (SyncPlaybackCommand) returns (stream SyncPlaybackResponse);
 }
 // new rpc - announce new client
 
@@ -58,9 +58,10 @@ message PlaybackResponse {
   bool accepted = 1;
 }
 message SyncPlaybackCommand {
-  string filename = 1;
+  string node_id = 1;
   int64 start_time = 2;
 }
 message SyncPlaybackResponse {
-  bool success = 1;
+  string filename = 1;
+  string status = 2;
 }
