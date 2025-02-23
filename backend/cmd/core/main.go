@@ -9,6 +9,7 @@ import (
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcserver "github.com/HelixY2J/firefly/backend/pkg/grpc_server"
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
+	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 )
 
 func main() {
@@ -26,6 +27,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to register service: %v", err)
 	}
+
+	relay := websocket.NewWebSocketRelay()
+    
+    // Start WebSocket server for GUI connections
+    go func() {
+        if err := relay.StartServer(":8080"); err != nil {
+            log.Fatalf("Failed to start WebSocket server: %v", err)
+        } else{
+			log.Println("WebSocket server started")
+		}
+    }()
 
 	// Start ealth checks
 	go func() {
