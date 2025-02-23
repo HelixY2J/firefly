@@ -17,9 +17,9 @@ const Index = () => {
           className="text-center"
         >
           <motion.img
-            src="https://raw.githubusercontent.com/HelixY2J/firefly/main/res/logo.svg"
+            src="./sparkle.svg"
             alt="Firefly Logo"
-            className="w-24 h-24 mx-auto mb-8"
+            className="w-80 h-80 mx-auto mb-8"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
