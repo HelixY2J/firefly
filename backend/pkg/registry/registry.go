@@ -13,4 +13,5 @@ type Registry interface {
 	CleanupInactiveNodes()
 	GetAvailableSongs() []string
 	SyncLibrary(nodeID string, files []FileMetadata)
+	SyncPlayback(nodeID string, action string) bool
 }

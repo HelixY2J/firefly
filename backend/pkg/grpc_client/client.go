@@ -53,24 +53,6 @@ func (c *GRPCClient) SyncLibrary(nodeID string, files []*pb.FileMetadata) (*pb.S
 	return c.client.SyncLibrary(context.Background(), req)
 }
 
-// func (c *GRPCClient) ListenForPlayback() {
-// 	stream, err := c.client.SyncPlayback(context.Background(), &pb.SyncPlaybackCommand{})
-// 	if err != nil {
-// 		log.Fatalf(" Failed to start playback listener: %v", err)
-// 	}
-
-// 	for {
-// 		resp, err := stream.Recv()
-// 		if err != nil {
-// 			log.Fatalf(" Error receiving playback command: %v", err)
-// 		}
-
-// 		log.Printf(" Received playback command: Start playing %s", resp.Filename)
-
-// 		// addd logic for music player
-// 	}
-// }
-
 func (c *GRPCClient) ListenForPlayback(nodeID string) {
 	for {
 		stream, err := c.client.SyncPlayback(context.Background(), &pb.SyncPlaybackCommand{NodeId: nodeID})
