@@ -9,12 +9,38 @@ import (
 	"github.com/HelixY2J/firefly/backend/pkg/discovery/consul"
 	grpcserver "github.com/HelixY2J/firefly/backend/pkg/grpc_server"
 	"github.com/HelixY2J/firefly/backend/pkg/registry"
+	"github.com/HelixY2J/firefly/backend/pkg/websocket"
 )
 
 func main() {
 	// Initialize Consul client
 	reg := registry.NewInMemoryRegistry("localhost:50051")
 	registryService := registry.NewRegistryService(reg)
+
+	registryService.LibraryStore.SyncFiles("master-node", []registry.FileMetadata{
+		{
+			Filename: "server_song.mp3",
+			Checksum: "server123",
+			Chunks: []registry.ChunkMetadata{
+				{Fingerprint: "server_chunk1", Size: 2048},
+			},
+		},
+		{
+			Filename: "test_song.mp3",
+			Checksum: "abc123",
+			Chunks: []registry.ChunkMetadata{
+				{Fingerprint: "chunk1_hash", Size: 1024},
+			},
+		},
+		{
+			Filename: "background_music.mp3",
+			Checksum: "server456",
+			Chunks: []registry.ChunkMetadata{
+				{Fingerprint: "server_chunk2", Size: 3072},
+			},
+		},
+	})
+	log.Println("loaded server files into the library")
 
 	consulClient, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
@@ -26,6 +52,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to register service: %v", err)
 	}
+
+	relay := websocket.NewWebSocketRelay()
+    
+    // Start WebSocket server for GUI connections
+    go func() {
+        if err := relay.StartServer(":8080"); err != nil {
+            log.Fatalf("Failed to start WebSocket server: %v", err)
+        } else{
+			log.Println("WebSocket server started")
+		}
+    }()
 
 	// Start ealth checks
 	go func() {

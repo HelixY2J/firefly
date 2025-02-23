@@ -23,7 +23,7 @@ func NewClient(masterAddr string) *GRPCClient {
 	return &GRPCClient{conn: conn, client: client}
 }
 
-func (c *GRPCClient) RegisterNode() {
+func (c *GRPCClient) RegisterNode() string {
 	req := &pb.RegisterRequest{
 		NodeId:   "",
 		NodeType: "client",
@@ -35,8 +35,17 @@ func (c *GRPCClient) RegisterNode() {
 	}
 
 	log.Printf("Registered with Master, Assigned ID: %s, Master URL: %s", resp.AssignedId, resp.MasterUrl)
+	return resp.AssignedId
 }
 
 func (c *GRPCClient) Close() {
 	c.conn.Close()
+}
+
+func (c *GRPCClient) SyncLibrary(nodeID string, files []*pb.FileMetadata) (*pb.SyncLibraryResponse, error) {
+	req := &pb.SyncLibraryRequest{
+		NodeId: nodeID,
+		Files:  files,
+	}
+	return c.client.SyncLibrary(context.Background(), req)
 }

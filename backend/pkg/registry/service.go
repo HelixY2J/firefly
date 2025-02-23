@@ -7,11 +7,15 @@ import (
 )
 
 type RegistryService struct {
-	Registry Registry
+	Registry     Registry
+	LibraryStore *LibraryStore
 }
 
 func NewRegistryService(reg Registry) *RegistryService {
-	return &RegistryService{Registry: reg}
+	return &RegistryService{
+		Registry:     reg,
+		LibraryStore: NewLibraryStore(),
+	}
 }
 
 func (s *RegistryService) RegisterNode(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
@@ -28,4 +32,8 @@ func (s *RegistryService) GetActiveNodes() []*NodeInfo {
 
 func (s *RegistryService) CleanupInactiveNodes() {
 	s.Registry.CleanupInactiveNodes()
+}
+
+func (s *RegistryService) SyncLibrary(nodeID string, files []FileMetadata) []FileMetadata {
+	return s.LibraryStore.SyncFiles(nodeID, files)
 }

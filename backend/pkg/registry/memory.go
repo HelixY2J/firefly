@@ -76,3 +76,7 @@ func (r *InMemoryRegistry) CleanupInactiveNodes() {
 		}
 	}
 }
+
+func (r *InMemoryRegistry) SyncLibrary(nodeID string, files []FileMetadata) []FileMetadata {
+	return nil
+}
