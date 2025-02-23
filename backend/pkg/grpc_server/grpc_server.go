@@ -56,7 +56,43 @@ func (s *GRPCServer) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest) (*
 }
 
 func (s *GRPCServer) SyncLibrary(ctx context.Context, req *pb.SyncLibraryRequest) (*pb.SyncLibraryResponse, error) {
-	return &pb.SyncLibraryResponse{}, nil
+	files := make([]registry.FileMetadata, len(req.Files))
+	for i, f := range req.Files {
+		chunks := make([]registry.ChunkMetadata, len(f.Chunks))
+		for j, c := range f.Chunks {
+			chunks[j] = registry.ChunkMetadata{
+				Fingerprint: c.Fingerprint,
+				Size:        c.Size,
+			}
+		}
+		files[i] = registry.FileMetadata{
+			Filename: f.Filename,
+			Checksum: f.Checksum,
+			Chunks:   chunks,
+		}
+	}
+
+	missingFiles := s.registry.SyncLibrary(req.NodeId, files)
+
+	var responseFiles []*pb.FileMetadata
+	for _, file := range missingFiles {
+		var chunks []*pb.ChunkMetadata
+		for _, c := range file.Chunks {
+			chunks = append(chunks, &pb.ChunkMetadata{
+				Fingerprint: c.Fingerprint,
+				Size:        c.Size,
+			})
+		}
+		responseFiles = append(responseFiles, &pb.FileMetadata{
+			Filename: file.Filename,
+			Checksum: file.Checksum,
+			Chunks:   chunks,
+		})
+	}
+
+	return &pb.SyncLibraryResponse{
+		MissingFiles: responseFiles,
+	}, nil
 }
 
 func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackRequest) (*pb.PlaybackResponse, error) {
