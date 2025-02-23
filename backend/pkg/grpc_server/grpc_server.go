@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
 
@@ -56,13 +57,61 @@ func (s *GRPCServer) Heartbeat(ctx context.Context, req *pb.HeartbeatRequest) (*
 }
 
 func (s *GRPCServer) SyncLibrary(ctx context.Context, req *pb.SyncLibraryRequest) (*pb.SyncLibraryResponse, error) {
+	files := make([]registry.FileMetadata, len(req.Files))
+	for i, f := range req.Files {
+		chunks := make([]registry.ChunkMetadata, len(f.Chunks))
+		for j, c := range f.Chunks {
+			chunks[j] = registry.ChunkMetadata{
+				Fingerprint: c.Fingerprint,
+				Size:        c.Size,
+			}
+		}
+		files[i] = registry.FileMetadata{
+			Filename: f.Filename,
+			Checksum: f.Checksum,
+			Chunks:   chunks,
+		}
+	}
+	s.registry.SyncLibrary(req.NodeId, files)
+
 	return &pb.SyncLibraryResponse{}, nil
+
 }
 
 func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackRequest) (*pb.PlaybackResponse, error) {
 	return &pb.PlaybackResponse{}, nil
 }
 
-func (s *GRPCServer) SyncPlayback(ctx context.Context, req *pb.SyncPlaybackCommand) (*pb.SyncPlaybackResponse, error) {
-	return &pb.SyncPlaybackResponse{}, nil
+func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
+	log.Printf("Client %s started listening for playback commands", req.NodeId)
+
+
+	availableSongs := s.registry.GetAvailableSongs()
+	if len(availableSongs) == 0 {
+		log.Println(" No songs available for playback.")
+		return nil
+	// smulated playback events
+	playbackCommands := []pb.SyncPlaybackResponse{
+		{Filename: "song1.wav", Status: "PLAY"},
+		{Filename: "song1.wav", Status: "PAUSE"},
+		{Filename: "song1.wav", Status: "STOP"},
+		{Filename: "song2.wav", Status: "PLAY"},
+	}
+
+	// Pick a song to play
+	for _, song := range availableSongs {
+		cmd := &pb.SyncPlaybackResponse{
+			Filename: song,
+			Status:   "PLAY",
+		}
+		log.Printf(" Sending playback command: %s", song)
+		if err := stream.Send(cmd); err != nil {
+			log.Printf("Failed to send playback command: %v", err)
+			return err
+		}
+		log.Printf("Sent playback command: %s", song)
+		time.Sleep(5 * time.Second)
+	}
+
+	return nil
 }

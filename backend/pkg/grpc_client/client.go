@@ -2,9 +2,12 @@ package grpcclient
 
 import (
 	"context"
+	"io"
 	"log"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
+	"github.com/HelixY2J/firefly/backend/pkg/player"
+	"github.com/faiface/beep/speaker"
 	"google.golang.org/grpc"
 )
 
@@ -23,7 +26,7 @@ func NewClient(masterAddr string) *GRPCClient {
 	return &GRPCClient{conn: conn, client: client}
 }
 
-func (c *GRPCClient) RegisterNode() {
+func (c *GRPCClient) RegisterNode() string {
 	req := &pb.RegisterRequest{
 		NodeId:   "",
 		NodeType: "client",
@@ -35,8 +38,67 @@ func (c *GRPCClient) RegisterNode() {
 	}
 
 	log.Printf("Registered with Master, Assigned ID: %s, Master URL: %s", resp.AssignedId, resp.MasterUrl)
+	return resp.AssignedId
 }
 
 func (c *GRPCClient) Close() {
 	c.conn.Close()
+}
+
+func (c *GRPCClient) SyncLibrary(nodeID string, files []*pb.FileMetadata) (*pb.SyncLibraryResponse, error) {
+	req := &pb.SyncLibraryRequest{
+		NodeId: nodeID,
+		Files:  files,
+	}
+	return c.client.SyncLibrary(context.Background(), req)
+}
+
+// func (c *GRPCClient) ListenForPlayback() {
+// 	stream, err := c.client.SyncPlayback(context.Background(), &pb.SyncPlaybackCommand{})
+// 	if err != nil {
+// 		log.Fatalf(" Failed to start playback listener: %v", err)
+// 	}
+
+// 	for {
+// 		resp, err := stream.Recv()
+// 		if err != nil {
+// 			log.Fatalf(" Error receiving playback command: %v", err)
+// 		}
+
+// 		log.Printf(" Received playback command: Start playing %s", resp.Filename)
+
+// 		// addd logic for music player
+// 	}
+// }
+
+func (c *GRPCClient) ListenForPlayback(nodeID string) {
+	for {
+		stream, err := c.client.SyncPlayback(context.Background(), &pb.SyncPlaybackCommand{NodeId: nodeID})
+		if err != nil {
+			log.Printf(" Failed to start playback listener: %v", err)
+			continue
+		}
+
+		for {
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				log.Println(" Playback stream ended. Reconnecting...")
+				break
+			}
+			if err != nil {
+				log.Printf("eerror receiving playback command: %v", err)
+				break
+			}
+
+			log.Printf("received playback command: %s - %s", resp.Status, resp.Filename)
+
+			// Play or stop music based on the command
+			if resp.Status == "PLAY" {
+				go player.PlaySong(resp.Filename)
+			} else if resp.Status == "STOP" {
+				log.Printf("Stopping playback: %s", resp.Filename)
+				speaker.Clear()
+			}
+		}
+	}
 }

@@ -11,4 +11,6 @@ type Registry interface {
 	Heartbeat(ctx context.Context, req *pb.HeartbeatRequest) error
 	GetActiveNodes() []*NodeInfo
 	CleanupInactiveNodes()
+	GetAvailableSongs() []string
+	SyncLibrary(nodeID string, files []FileMetadata)
 }
