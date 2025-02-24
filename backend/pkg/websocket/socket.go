@@ -109,7 +109,9 @@ func (wr *WebSocketRelay) forwardMessages(source *websocket.Conn, sourceType str
 		if err := json.Unmarshal(message, &cmd); err == nil {
 			if cmd.Type == "playback_command" {
 				wr.mu.Lock()
+				// log.Println("Before updaing lastcmd: ", wr.lastcmd)
 				wr.lastcmd = cmd.Status
+				// log.Println("After updaing lastcmd: ", wr.lastcmd)
 				if wr.onPlayback != nil {
 					wr.onPlayback(cmd.Filename, cmd.Status)
 				}

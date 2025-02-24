@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
 
@@ -84,43 +85,77 @@ func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackReques
 	return &pb.PlaybackResponse{}, nil
 }
 
+// func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
+// 	log.Printf("Client %s started listening for playback commands", req.NodeId)
+
+// 	// Create a channel to receive playback commands directly
+// 	commandChan := make(chan string, 1)
+
+// 	s.relay.SetPlaybackHandler(func(filename, status string) {
+// 		log.Printf("SYNCPLAYBACK Received from WS: %s - %s", filename, status)
+// 		commandChan <- status
+// 	})
+
+// 	for {
+// 		select {
+// 		case command := <-commandChan:
+// 			if command != "PLAY" && command != "STOP" {
+// 				log.Printf("Invalid playback command received: %s", command)
+// 				continue
+// 			}
+
+// 			activeClients := s.registry.GetActiveNodes()
+// 			if len(activeClients) == 0 {
+// 				log.Println("No active clients to send playback command.")
+// 				continue
+// 			}
+
+// 			for _, client := range activeClients {
+// 				cmd := &pb.SyncPlaybackResponse{
+// 					Filename: "",
+// 					Status:   command,
+// 				}
+// 				log.Println("clients YYYYY ", client, " command send: ", cmd)
+// 				log.Printf("[GRPCServer] Sending playback command: %s to %s", command, client.Address)
+
+// 				if err := stream.Send(cmd); err != nil {
+// 					log.Printf("Failed to send playback command: %v", err)
+// 					return err
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
 func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
 	log.Printf("Client %s started listening for playback commands", req.NodeId)
 
-	// Create a channel to receive playback commands directly
-	commandChan := make(chan string, 1)
-
-	s.relay.SetPlaybackHandler(func(filename, status string) {
-		log.Printf("SYNCPLAYBACK Received from WS: %s - %s", filename, status)
-		commandChan <- status
-	})
-
 	for {
-		select {
-		case command := <-commandChan:
-			if command != "PLAY" && command != "STOP" {
-				log.Printf("Invalid playback command received: %s", command)
-				continue
+		command := s.relay.GetLastCommand()
+		if command == "" {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if command != "PLAY" && command != "STOP" {
+			log.Printf("Invalid playback command received: %s", command)
+			continue
+		}
+
+		if s.registry.SyncPlayback(req.NodeId, command) {
+			// log.Println("Client YYYYYY ", req.NodeId, " command send: ", command)
+			cmd := &pb.SyncPlaybackResponse{
+				Filename: "",
+				Status:   command,
 			}
+			log.Printf("Sending playback command: %s", command)
 
-			activeClients := s.registry.GetActiveNodes()
-			if len(activeClients) == 0 {
-				log.Println("No active clients to send playback command.")
-				continue
-			}
-
-			for _, client := range activeClients {
-				cmd := &pb.SyncPlaybackResponse{
-					Filename: "",
-					Status:   command,
-				}
-				log.Printf("[GRPCServer] Sending playback command: %s to %s", command, client.Address)
-
-				if err := stream.Send(cmd); err != nil {
-					log.Printf("Failed to send playback command: %v", err)
-					return err
-				}
+			if err := stream.Send(cmd); err != nil {
+				log.Printf("Failed to send playback command: %v", err)
+				return err
 			}
 		}
+
+		time.Sleep(1 * time.Second)
 	}
 }

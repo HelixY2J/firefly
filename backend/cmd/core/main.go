@@ -199,7 +199,7 @@ func main() {
 
 	// Set up the playback handler
 	relay.SetPlaybackHandler(func(filename string, status string) {
-		log.Printf("Playing file: %s with status: %s", filename, status)
+		log.Printf("[Inside SetPlayBack] Playing file: %s with status: %s", filename, status)
 		// Here you can implement the actual audio playback logic
 		// For example:
 		switch status {

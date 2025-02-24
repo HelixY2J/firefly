@@ -132,7 +132,7 @@ func (r *InMemoryRegistry) SyncPlayback(nodeID string, action string) bool {
 		r.playingStatus[nodeID] = true
 		r.pauseStatus[nodeID] = false
 		return true
-	} else if action == "PAUSE" && r.playingStatus[nodeID] {
+	} else if action == "STOP" && r.playingStatus[nodeID] {
 		r.pauseStatus[nodeID] = true
 		r.playingStatus[nodeID] = false
 		return true
