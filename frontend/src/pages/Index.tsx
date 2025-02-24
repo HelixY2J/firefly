@@ -1,20 +1,83 @@
-
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
+import { useEffect, useState } from 'react';
+
+// Generate random positions for fireflies
+const generateFireflies = (count: number) => {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    scale: 0.5 + Math.random() * 0.5,
+  }));
+};
 
 const Index = () => {
+  const [fireflies] = useState(() => generateFireflies(15));
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative overflow-hidden">
       <Navbar />
+      
+      {/* Fireflies */}
+      {fireflies.map((firefly) => (
+        <motion.div
+          key={firefly.id}
+          className="absolute w-2 h-2 rounded-full"
+          style={{
+            left: `${firefly.x}%`,
+            top: `${firefly.y}%`,
+          }}
+          initial={{
+            scale: firefly.scale,
+            opacity: 0,
+          }}
+          animate={{
+            x: [
+              Math.random() * 100 - 50,
+              Math.random() * 100 - 50,
+              Math.random() * 100 - 50,
+            ],
+            y: [
+              Math.random() * 100 - 50,
+              Math.random() * 100 - 50,
+              Math.random() * 100 - 50,
+            ],
+            opacity: [0.2, 0.8, 0.2],
+            scale: [firefly.scale, firefly.scale * 1.2, firefly.scale],
+          }}
+          transition={{
+            duration: 8 + Math.random() * 10,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        >
+          <motion.div
+            className="w-full h-full bg-glow rounded-full"
+            animate={{
+              boxShadow: [
+                "0 0 10px 2px rgba(80, 227, 194, 0.3)",
+                "0 0 20px 4px rgba(80, 227, 194, 0.6)",
+                "0 0 10px 2px rgba(80, 227, 194, 0.3)",
+              ],
+            }}
+            transition={{
+              duration: 2 + Math.random() * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </motion.div>
+      ))}
       
       <main className="container mx-auto px-4 pt-32">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center"
+          className="text-center relative z-10"
         >
           <motion.img
             src="./sparkle.svg"
@@ -48,6 +111,7 @@ const Index = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.8 }}
+            whileHover={{ scale: 1.05 }}
           >
             <Link
               to="/music"
