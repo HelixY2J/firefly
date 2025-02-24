@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
 
@@ -88,58 +87,40 @@ func (s *GRPCServer) RequestPlayback(ctx context.Context, req *pb.PlaybackReques
 func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
 	log.Printf("Client %s started listening for playback commands", req.NodeId)
 
+	// Create a channel to receive playback commands directly
+	commandChan := make(chan string, 1)
+
+	s.relay.SetPlaybackHandler(func(filename, status string) {
+		log.Printf("SYNCPLAYBACK Received from WS: %s - %s", filename, status)
+		commandChan <- status
+	})
+
 	for {
-		command := s.relay.GetLastCommand()
-		if command == "" {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		if command != "PLAY" && command != "STOP" {
-			log.Printf("Invalid playback command received: %s", command)
-			continue
-		}
-
-		if s.registry.SyncPlayback(req.NodeId, command) {
-			cmd := &pb.SyncPlaybackResponse{
-				Filename: "",
-				Status:   command,
+		select {
+		case command := <-commandChan:
+			if command != "PLAY" && command != "STOP" {
+				log.Printf("Invalid playback command received: %s", command)
+				continue
 			}
-			log.Printf("[GRPCServer] Sending playback command: %s", command)
 
-			if err := stream.Send(cmd); err != nil {
-				log.Printf("Failed to send playback command: %v", err)
-				return err
+			activeClients := s.registry.GetActiveNodes()
+			if len(activeClients) == 0 {
+				log.Println("No active clients to send playback command.")
+				continue
+			}
+
+			for _, client := range activeClients {
+				cmd := &pb.SyncPlaybackResponse{
+					Filename: "",
+					Status:   command,
+				}
+				log.Printf("[GRPCServer] Sending playback command: %s to %s", command, client.Address)
+
+				if err := stream.Send(cmd); err != nil {
+					log.Printf("Failed to send playback command: %v", err)
+					return err
+				}
 			}
 		}
-
-		time.Sleep(1 * time.Second)
 	}
 }
-
-// func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.FireflyService_SyncPlaybackServer) error {
-// 	log.Printf("Client %s started listening for playback commands", req.NodeId)
-
-// 	availableSongs := s.registry.GetAvailableSongs()
-// 	if len(availableSongs) == 0 {
-// 		log.Println(" No songs available for playback.")
-// 		return nil
-// 	}
-
-// 	// Pick a song to play
-// 	for _, song := range availableSongs {
-// 		cmd := &pb.SyncPlaybackResponse{
-// 			Filename: song,
-// 			Status:   "PLAY",
-// 		}
-// 		log.Printf(" Sending playback command: %s", song)
-// 		if err := stream.Send(cmd); err != nil {
-// 			log.Printf("Failed to send playback command: %v", err)
-// 			return err
-// 		}
-// 		log.Printf("Sent playback command: %s", song)
-// 		time.Sleep(5 * time.Second)
-// 	}
-
-// 	return nil
-// }
