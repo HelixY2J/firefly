@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 
 	pb "github.com/HelixY2J/firefly/backend/common/api"
 
@@ -133,7 +132,6 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 	for {
 		command := s.relay.GetLastCommand()
 		if command == "" {
-			time.Sleep(1 * time.Second)
 			continue
 		}
 
@@ -156,6 +154,5 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 			}
 		}
 
-		time.Sleep(1 * time.Second)
 	}
 }

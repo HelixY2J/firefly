@@ -112,9 +112,6 @@ func (wr *WebSocketRelay) forwardMessages(source *websocket.Conn, sourceType str
 				// log.Println("Before updaing lastcmd: ", wr.lastcmd)
 				wr.lastcmd = cmd.Status
 				// log.Println("After updaing lastcmd: ", wr.lastcmd)
-				if wr.onPlayback != nil {
-					wr.onPlayback(cmd.Filename, cmd.Status)
-				}
 				wr.mu.Unlock()
 				log.Printf("[WebSocket] Received playback command: %s - %s", cmd.Filename, cmd.Status)
 				continue
