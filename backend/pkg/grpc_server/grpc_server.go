@@ -105,7 +105,7 @@ func (s *GRPCServer) SyncPlayback(req *pb.SyncPlaybackCommand, stream pb.Firefly
 				Filename: "",
 				Status:   command,
 			}
-			log.Printf("Sending playback command: %s", command)
+			log.Printf("[GRPCServer] Sending playback command: %s", command)
 
 			if err := stream.Send(cmd); err != nil {
 				log.Printf("Failed to send playback command: %v", err)

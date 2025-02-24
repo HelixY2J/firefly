@@ -114,7 +114,7 @@ func (wr *WebSocketRelay) forwardMessages(source *websocket.Conn, sourceType str
 					wr.onPlayback(cmd.Filename, cmd.Status)
 				}
 				wr.mu.Unlock()
-				log.Printf("Received playback command: %s - %s", cmd.Filename, cmd.Status)
+				log.Printf("[WebSocket] Received playback command: %s - %s", cmd.Filename, cmd.Status)
 				continue
 			}
 		}

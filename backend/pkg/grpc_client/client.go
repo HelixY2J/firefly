@@ -72,7 +72,7 @@ func (c *GRPCClient) ListenForPlayback(nodeID string) {
 				break
 			}
 
-			log.Printf("received playback command: %s - %s", resp.Status, resp.Filename)
+			log.Printf("[GRPCClient] received playback command: %s - %s", resp.Status, resp.Filename)
 
 			// Play or stop music based on the command
 			if resp.Status == "PLAY" {
