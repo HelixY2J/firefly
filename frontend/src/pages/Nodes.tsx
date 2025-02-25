@@ -102,8 +102,8 @@ const Nodes = () => {
             {nodes.length <= 1 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <Network size={48} className="text-glow mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No Clients Connected</h3>
-                <p className="text-gray-400">Run the client application to connect nodes</p>
+                <h3 className="text-xl font-semibold mb-2">No Fireflies Connected</h3>
+                <p className="text-gray-400">Run the client application to connect firefly</p>
               </div>
             ) : (
               <>
@@ -184,10 +184,11 @@ const Nodes = () => {
                         }}
                         style={{ filter: 'blur(8px)' }}
                       />
-                      <Network 
+                      {/* <Network 
                         size={node.type === 'server' ? 24 : 20} 
                         className="text-background z-10" 
-                      />
+                      /> */}
+                      <img src='./firefly.svg' alt="Firefly Logo" className="w-10 h-10 z-10" />
                     </motion.div>
                     <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
                       <span className="text-sm font-medium text-white/80">

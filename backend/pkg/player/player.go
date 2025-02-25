@@ -1,7 +1,6 @@
 package player
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -12,7 +11,9 @@ import (
 )
 
 func PlaySong(filename string) error {
-	filepath := fmt.Sprintf("/home/helix/code/go/firefly/backend/cmd/client/songs/%s", filename)
+	// filepath := fmt.Sprintf("/Users/ganesh/Desktop/myCode/Projects/Github/firefly/backend/cmd/core/songs/rolling.wav", filename)
+	filepath := "/Users/ganesh/Desktop/myCode/Projects/Github/firefly/backend/cmd/core/songs/rolling.wav"
+	// println("filepath: %s", filepath)
 	f, err := os.Open(filepath)
 	if err != nil {
 		log.Printf(" Could not open file %s: %v", filepath, err)

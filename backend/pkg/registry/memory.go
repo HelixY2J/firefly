@@ -16,6 +16,7 @@ type InMemoryRegistry struct {
 	masterURL     string
 	libraryStore  *LibraryStore
 	playingStatus map[string]bool
+	pauseStatus   map[string]bool
 }
 
 func NewInMemoryRegistry(masterURL string) *InMemoryRegistry {
@@ -24,6 +25,7 @@ func NewInMemoryRegistry(masterURL string) *InMemoryRegistry {
 		masterURL:     masterURL,
 		libraryStore:  NewLibraryStore(),
 		playingStatus: make(map[string]bool),
+		pauseStatus:   make(map[string]bool),
 	}
 }
 
@@ -93,6 +95,9 @@ func (r *InMemoryRegistry) SetPlayingStatus(nodeID string, isPlaying bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.playingStatus[nodeID] = isPlaying
+	if !isPlaying {
+		r.pauseStatus[nodeID] = false
+	}
 }
 
 func (r *InMemoryRegistry) IsPlaying(nodeID string) bool {
@@ -101,15 +106,35 @@ func (r *InMemoryRegistry) IsPlaying(nodeID string) bool {
 	return r.playingStatus[nodeID]
 }
 
+func (r *InMemoryRegistry) SetPauseStatus(nodeID string, isPaused bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.pauseStatus[nodeID] = isPaused
+}
+
+func (r *InMemoryRegistry) IsPaused(nodeID string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.pauseStatus[nodeID]
+}
+
 func (r *InMemoryRegistry) CanSendPlaybackCommand(nodeID string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return !r.playingStatus[nodeID]
 }
 
-func (r *InMemoryRegistry) SyncPlayback(nodeID string) bool {
-	if r.CanSendPlaybackCommand(nodeID) {
-		r.SetPlayingStatus(nodeID, true)
+func (r *InMemoryRegistry) SyncPlayback(nodeID string, action string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if action == "PLAY" && !r.playingStatus[nodeID] {
+		r.playingStatus[nodeID] = true
+		r.pauseStatus[nodeID] = false
+		return true
+	} else if action == "STOP" && r.playingStatus[nodeID] {
+		r.pauseStatus[nodeID] = true
+		r.playingStatus[nodeID] = false
 		return true
 	}
 	return false
@@ -117,4 +142,7 @@ func (r *InMemoryRegistry) SyncPlayback(nodeID string) bool {
 
 func (r *InMemoryRegistry) FinishPlayback(nodeID string) {
 	r.SetPlayingStatus(nodeID, false)
+}
+func (r *InMemoryRegistry) HandleWebSocketCommand(nodeID string, command string) bool {
+	return r.SyncPlayback(nodeID, command)
 }

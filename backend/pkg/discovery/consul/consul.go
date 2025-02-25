@@ -7,6 +7,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"os"
+	"time"
 
 	"github.com/hashicorp/consul/api"
 )
@@ -39,11 +41,20 @@ func (r *Registry) Register(ctx context.Context, instanceID, serviceName, hostpo
 
 	host := parts[0]
 	log.Printf("Registering service %s with Consul at %s:%d", serviceName, host, port)
+
+	// Get hostname for metadata
+	hostname, _ := os.Hostname()
+
 	err = r.client.Agent().ServiceRegister(&api.AgentServiceRegistration{
 		ID:      instanceID,
 		Name:    serviceName,
 		Address: host,
 		Port:    port,
+		Tags:    []string{"v1", "firefly", hostname},
+		Meta: map[string]string{
+			"hostname": hostname,
+			"version":  "1.0",
+		},
 		Check: &api.AgentServiceCheck{
 			CheckID:                        instanceID,
 			TLSSkipVerify:                  true,
@@ -69,14 +80,23 @@ func (r *Registry) Unregister(ctx context.Context, instanceID string) error {
 }
 
 func (r *Registry) Discover(ctx context.Context, serviceName string) ([]string, error) {
-	entries, _, err := r.client.Health().Service(serviceName, "", true, nil)
+	// Use QueryOptions to enable network-wide search
+	qOpts := &api.QueryOptions{
+		AllowStale: true,  // Allow reading from non-leader nodes
+		WaitTime:   time.Second * 2,  // Wait up to 2 seconds for consistent result
+	}
+
+	entries, _, err := r.client.Health().Service(serviceName, "", true, qOpts)
 	if err != nil {
 		return nil, err
 	}
 
 	var instances []string
 	for _, entry := range entries {
-		instances = append(instances, fmt.Sprintf("%s:%d", entry.Service.Address, entry.Service.Port))
+		// Only include healthy instances
+		if entry.Checks.AggregatedStatus() == api.HealthPassing {
+			instances = append(instances, fmt.Sprintf("%s:%d", entry.Service.Address, entry.Service.Port))
+		}
 	}
 	return instances, nil
 }

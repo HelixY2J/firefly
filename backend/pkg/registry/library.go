@@ -8,7 +8,7 @@ import (
 
 type LibraryStore struct {
 	mu    sync.RWMutex
-	files map[string][]string
+	files map[string][]FileMetadata
 }
 
 type FileMetadata struct {
@@ -26,16 +26,16 @@ func (ls *LibraryStore) GetAllFiles() []FileMetadata {
     ls.mu.Lock()
     defer ls.mu.Unlock()
     
-    files := make([]FileMetadata, 0, len(ls.files))
-    for _, file := range ls.files {
-        files = append(files, file)
+    var files []FileMetadata
+    for _, fileList := range ls.files {
+        files = append(files, fileList...)
     }
     return files
 }
 
 func NewLibraryStore() *LibraryStore {
 	return &LibraryStore{
-		files: make(map[string][]string),
+		files: make(map[string][]FileMetadata),
 	}
 }
 
@@ -52,9 +52,7 @@ func (l *LibraryStore) SyncFiles(nodeID string, files []FileMetadata) {
 	// }
 	// return missingFiles
 
-	for _, file := range files {
-		l.files[file.Filename] = append(l.files[file.Filename], nodeID)
-	}
+    l.files[nodeID] = files // Store the entire FileMetadata
 }
 
 func (s *LibraryStore) GetAvailableSongs() []string {

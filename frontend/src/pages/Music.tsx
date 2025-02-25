@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Music as MusicIcon, Play, Pause, SkipBack, SkipForward, Volume2, AlertCircle } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
@@ -19,16 +19,13 @@ const MusicPage = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
 
-  useEffect(() => {
-        // Use window.location.hostname to get the current IP address
-        const wsHost = window.location.hostname;
-        const ws = new WebSocket(`ws://${wsHost}:8081/ws`);
-        
-        ws.onopen = () => {
-            setWsConnected(true);
-            console.log('Connected to music WebSocket');
-        };
+  const wsRef = useRef<WebSocket | null>(null);
 
+  useEffect(() => {
+    const wsHost = window.location.hostname;
+    const ws = new WebSocket(`ws://${wsHost}:8081/ws`);
+    wsRef.current = ws;
+    
     ws.onopen = () => {
       setWsConnected(true);
       console.log('Connected to music WebSocket');
@@ -70,6 +67,19 @@ const MusicPage = () => {
       ws.close();
     };
   }, []);
+
+  const handlePlayPause = () => {
+    if (!wsConnected || !wsRef.current) return;
+
+    const command = {
+      type: "playback_command",
+      filename: currentSong.title + ".wav",
+      status: !isPlaying ? "PLAY" : "STOP"
+    };
+
+    wsRef.current.send(JSON.stringify(command));
+    setIsPlaying(!isPlaying);
+  };
 
   return (
     <div className="min-h-screen">
@@ -162,7 +172,7 @@ const MusicPage = () => {
                 </button>
                 <button 
                   className="p-4 bg-glow rounded-full text-background hover:bg-glow/90 transition-colors"
-                  onClick={() => setIsPlaying(!isPlaying)}
+                  onClick={handlePlayPause}
                 >
                   {isPlaying ? <Pause size={24} /> : <Play size={24} />}
                 </button>
