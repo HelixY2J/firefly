@@ -2,7 +2,50 @@
 
 Current approach - P2P system with master node for sync
 
-![firefly](./res/logo.svg)
+![firefly](./res/home_firefly.png)
+
+![firefly1](./res/connected_nodes.png)
+
+![firefly2](./res/music_dashboard.png)
+
+## Setup
+
+Clone the Repository  
+```sh
+git clone https://github.com/HelixY2J/firefly.git
+cd firefly
+```
+
+Navigate to the backend directory and install Go dependencies:
+```sh
+cd backend
+go mod tidy
+```
+
+Start the Firefly master server:
+```sh
+go run cmd/core/main.go
+```
+
+Each client connects to the master for playback synchronization
+
+For linux/macOS:
+```sh
+CONSUL_ADDR="192.168.x.x:8500" go run cmd/client/main.go
+```
+
+On Windows (PowerShell):
+```powershell
+$env:CONSUL_ADDR="192.168.x.x:8500"; go run cmd/client/main.go
+```
+Once the server is running, open the web UI in your browser
+```sh
+http://localhost:8081
+```
+This allows you to control playback, view active nodes, and manage files
+
+
+
 
 ## Design 
 
@@ -52,8 +95,18 @@ comm by grpc
 ## Known Upcoming challenges
 - How handling network failures like when master nodes crashes
 - Latency !!!
-
+- Implement Downloading Features for Missing Audio Files
+- Metadata Fingerprinting - Clients Should Request Chunks from Other Clients
+- Support MP3 and Other Audio Formats
+- Integrate Spotify 
 
 
 ## Unknown challenges
 ???
+
+## Did you know 
+
+Fireflies, despite blinking randomly at first, can synchronize their flashes when in large groups. This phenomenon, called synchronous flashing, occurs due to a natural feedback mechanism - Initially, each firefly blinks at its own rhythm.They adjust their timing based on nearby flashes. Over time, all fireflies in a group start flashing in perfect unison.
+
+Check out this [experiment](https://youtu.be/ZGvtnE1Wy6U?si=9Eex4CEr5p6bOe9R) where thousands of live fireflies are made to synchronize their flashes with a few computer controlled LED’s 
+
