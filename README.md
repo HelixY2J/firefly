@@ -1,4 +1,6 @@
-# Firefly beta
+# Firefly
+
+![foss_hack_25](./res/foss_hack_logo.png)
 
 Current approach - P2P system with master node for sync
 
